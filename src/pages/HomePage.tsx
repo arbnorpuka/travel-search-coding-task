@@ -6,13 +6,16 @@ import DestinationDetails from '../components/DestinationDetails';
 function HomePage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
-  const selectedDestinationId = id ? parseInt(id, 10) : null;
+  
+  const parsedId = id ? parseInt(id, 10) : null;
+  const isValidId = parsedId !== null && Number.isInteger(parsedId) && parsedId > 0;
+  const selectedDestinationId = isValidId ? parsedId : null;
 
   useEffect(() => {
-    if (id && isNaN(parseInt(id, 10))) {
+    if (id && !isValidId) {
       navigate('/');
     }
-  }, [id, navigate]);
+  }, [id, isValidId, navigate]);
 
   const handleDestinationSelect = (destinationId: number) => {
     navigate(`/${destinationId}`);
@@ -55,4 +58,3 @@ function HomePage() {
 }
 
 export default HomePage
-
