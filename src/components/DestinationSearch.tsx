@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { debounce } from 'lodash';
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxOptions } from '@headlessui/react';
@@ -16,11 +16,13 @@ export default function DestinationSearch({ onSelect }: DestinationSearchProps) 
   const [error, setError] = useState<string | null>(null);
   const [selectedDestination, setSelectedDestination] = useState<Destination | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const activeQueryRef = useRef<string>('');
 
   const debouncedSearch = useMemo(
     () =>
       debounce(async (searchQuery: string) => {
         if (searchQuery.trim() === '') {
+          activeQueryRef.current = '';
           setResults([]);
           setIsLoading(false);
           setError(null);
@@ -28,19 +30,27 @@ export default function DestinationSearch({ onSelect }: DestinationSearchProps) 
           return;
         }
 
+        activeQueryRef.current = searchQuery;
         setIsLoading(true);
         setError(null);
 
         try {
           const searchResults = await searchDestinations(searchQuery);
-          setResults(searchResults);
-          setHasSearched(true);
+          
+          if (activeQueryRef.current === searchQuery) {
+            setResults(searchResults);
+            setHasSearched(true);
+          }
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'An error occurred');
-          setResults([]);
-          setHasSearched(true);
+          if (activeQueryRef.current === searchQuery) {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+            setResults([]);
+            setHasSearched(true);
+          }
         } finally {
-          setIsLoading(false);
+          if (activeQueryRef.current === searchQuery) {
+            setIsLoading(false);
+          }
         }
       }, 300),
     []
@@ -58,6 +68,7 @@ export default function DestinationSearch({ onSelect }: DestinationSearchProps) 
   };
 
   const handleClear = () => {
+    activeQueryRef.current = '';
     setQuery('');
     setSelectedDestination(null);
     setResults([]);
